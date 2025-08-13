@@ -1,33 +1,38 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Depends
 from app.services.dadata_service import DadataService
 from app.schemas.address import AddressRequest, AddressResponse
+from dotenv import load_dotenv
+import os
 
 app = FastAPI()
-dadata_service: DadataService
 
+# Загрузка переменных окружения из файла .env
+load_dotenv()
 
-@app.on_event("startup")
-async def startup():
-    """Инициализация сервиса при старте приложения."""
-    global dadata_service
-    dadata_service = DadataService(api_key="817d7d45d012ac5497cb6ea4d88f47166daec015",
-                                   secret_key="b576626f3a04fe8c5c97ed1d3933a0e73186ce19")
+# Получение значений переменных окружения
+DADATA_API_KEY = os.getenv("DADATA_API_KEY")
+DADATA_SECRET_KEY = os.getenv("DADATA_SECRET_KEY")
 
-
-@app.on_event("shutdown")
-async def shutdown():
-    """Закрытие сессии при завершении работы приложения."""
+async def get_dadata_service():
+    """Зависимость для создания и закрытия DadataService."""
+    dadata_service = DadataService(api_key=DADATA_API_KEY,
+                                   secret_key=DADATA_SECRET_KEY)
+    yield dadata_service
     await dadata_service.close()
 
 
 @app.post("/standardize", response_model=AddressResponse)
-async def standardize_address(address_request: AddressRequest):
+async def standardize_address(
+    address_request: AddressRequest, dadata_service: DadataService = Depends(get_dadata_service)
+):
     """
     Стандартизация адреса через внешний сервис DaData.
     """
     if len(address_request.raw_address) > 60:
         raise HTTPException(status_code=400, detail="Превышена длина входного запроса")
 
-    standardized_address = await dadata_service.standardize(address_request.raw_address)
-    return AddressResponse(standardized_address=standardized_address)
+    try:
+        standardized_address = await dadata_service.standardize(address_request.raw_address)
+        return AddressResponse(standardized_address=standardized_address)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
