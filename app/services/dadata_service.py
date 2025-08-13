@@ -1,12 +1,14 @@
 import aiohttp
-from typing import Optional
+import os
+
 
 class DadataService:
     BASE_URL = "https://cleaner.dadata.ru/api/v1/clean/address"
 
-    def __init__(self, api_key: str, secret_key: str):
-        self.api_key = api_key
-        self.secret_key = secret_key
+    def __init__(self):
+        # Получение значений переменных окружения
+        self.api_key = os.getenv("DADATA_API_KEY")
+        self.secret_key = os.getenv("DADATA_SECRET_KEY")
         self.session = aiohttp.ClientSession()  # Инициализация сессии
 
     async def close(self):

@@ -51,9 +51,11 @@ Address Standardizer — это веб-приложение на базе FastAP
    ```bash
    pip install -r requirements.txt
 4. Настройте переменные окружения. Создайте файл .env в корне проекта и добавьте туда ваши ключи DaData:
-   ```bash
-   DADATA_API_KEY=your_api_key
-   DADATA_SECRET_KEY=your_secret_key
+   ```
+   SERVICE_NAME='dadata'
+   DADATA_API_KEY='ваш апи ключ'
+   DADATA_SECRET_KEY='ваш секретный ключ' 
+   ключи дадаты можно найти в личном кабинете по ссылке https://dadata.ru/profile/#info
 5. Запустите приложение:
    ```bash
    uvicorn app.main:app --reload
